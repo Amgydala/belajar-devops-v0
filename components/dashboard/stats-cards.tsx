@@ -1,72 +1,60 @@
-"use client"
+"use client";
 
-import { Activity, Cpu, Database, HardDrive, Network, Server } from "lucide-react"
-
-const stats = [
-  {
-    label: "Total Servers",
-    value: "24",
-    change: "+2 this month",
-    changeType: "positive" as const,
-    icon: Server,
-    color: "primary",
-  },
-  {
-    label: "Avg CPU Usage",
-    value: "67%",
-    change: "-5% from yesterday",
-    changeType: "positive" as const,
-    icon: Cpu,
-    color: "accent",
-  },
-  {
-    label: "Memory Used",
-    value: "142 GB",
-    change: "of 256 GB total",
-    changeType: "neutral" as const,
-    icon: Database,
-    color: "chart-3",
-  },
-  {
-    label: "Network Traffic",
-    value: "1.2 TB",
-    change: "+12% from yesterday",
-    changeType: "negative" as const,
-    icon: Network,
-    color: "chart-5",
-  },
-]
+import { useState, useEffect } from "react"
+// Jika ada import ikon bawaan v0 di bagian atas (seperti Lucide icons), biarkan saja jangan dihapus.
 
 export function StatsCards() {
+  // 1. Tempat penyimpanan data simulasi (State)
+  const [cpuUsage, setCpuUsage] = useState(67)
+  const [memoryUsed, setMemoryUsed] = useState(142)
+  const [networkTraffic, setNetworkTraffic] = useState(1.2)
+
+  // 2. Timer otomatis untuk mengacak angka setiap 3 detik
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCpuUsage(Math.floor(Math.random() * (85 - 45 + 1)) + 45) // Acak 45% - 85%
+      setMemoryUsed(Math.floor(Math.random() * (160 - 130 + 1)) + 130) // Acak 130GB - 160GB
+      setNetworkTraffic(parseFloat((Math.random() * (2.0 - 0.8) + 0.8).toFixed(1))) // Acak 0.8TB - 2.0TB
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [])
+
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {stats.map((stat) => (
-        <div
-          key={stat.label}
-          className="rounded-xl border border-border bg-card p-5 transition-colors hover:border-primary/30"
-        >
-          <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-muted-foreground">{stat.label}</span>
-            <div className={`flex h-9 w-9 items-center justify-center rounded-lg bg-${stat.color}/10`}>
-              <stat.icon className={`h-4 w-4 text-${stat.color}`} />
-            </div>
-          </div>
-          <div className="mt-3">
-            <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-            <p
-              className={`mt-1 text-xs ${
-                stat.changeType === "positive"
-                  ? "text-[oklch(0.65_0.2_145)]"
-                  : stat.changeType === "negative"
-                  ? "text-destructive"
-                  : "text-muted-foreground"
-              }`}
-            >
-              {stat.change}
-            </p>
-          </div>
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      {/* KOTAK CPU */}
+      <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="text-sm font-medium text-muted-foreground">Avg CPU Usage</div>
+        <div className="mt-2 text-3xl font-bold tracking-tight text-emerald-500">
+          {cpuUsage}%
         </div>
-      ))}
+        <div className="text-xs text-muted-foreground mt-1">-5% from yesterday</div>
+      </div>
+
+      {/* KOTAK MEMORY */}
+      <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="text-sm font-medium text-muted-foreground">Memory Used</div>
+        <div className="mt-2 text-3xl font-bold tracking-tight">
+          {memoryUsed} GB
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">of 256 GB total</div>
+      </div>
+
+      {/* KOTAK NETWORK TRAFFIC */}
+      <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="text-sm font-medium text-muted-foreground">Network Traffic</div>
+        <div className="mt-2 text-3xl font-bold tracking-tight">
+          {networkTraffic} TB
+        </div>
+        <div className="text-xs text-muted-foreground mt-1 text-emerald-500">+12% from yesterday</div>
+      </div>
+
+      {/* KOTAK TOTAL SERVERS (Statis) */}
+      <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="text-sm font-medium text-muted-foreground">Total Servers</div>
+        <div className="mt-2 text-3xl font-bold tracking-tight">24</div>
+        <div className="text-xs text-muted-foreground mt-1 text-emerald-500">+2 this month</div>
+      </div>
     </div>
   )
 }
