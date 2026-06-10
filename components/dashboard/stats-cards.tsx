@@ -1,59 +1,50 @@
-"use client";
+"use client"
 
 import { useState, useEffect } from "react"
-// Jika ada import ikon bawaan v0 di bagian atas (seperti Lucide icons), biarkan saja jangan dihapus.
 
 export function StatsCards() {
-  // 1. Tempat penyimpanan data simulasi (State)
-  const [cpuUsage, setCpuUsage] = useState(67)
-  const [memoryUsed, setMemoryUsed] = useState(142)
-  const [networkTraffic, setNetworkTraffic] = useState(1.2)
+  // State untuk menyimpan angka CPU dan RAM asli
+  const [metrics, setMetrics] = useState({ cpu: 0, ram: 0 })
 
-  // 2. Timer otomatis untuk mengacak angka setiap 3 detik
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCpuUsage(Math.floor(Math.random() * (85 - 45 + 1)) + 45) // Acak 45% - 85%
-      setMemoryUsed(Math.floor(Math.random() * (160 - 130 + 1)) + 130) // Acak 130GB - 160GB
-      setNetworkTraffic(parseFloat((Math.random() * (2.0 - 0.8) + 0.8).toFixed(1))) // Acak 0.8TB - 2.0TB
-    }, 3000)
+    const fetchMetrics = async () => {
+      try {
+        const response = await fetch('/api/stats')
+        const data = await response.json()
+        
+        if (data.cpu !== undefined && data.ram !== undefined) {
+          setMetrics({ cpu: data.cpu, ram: data.ram })
+        }
+      } catch (err) {
+        console.error("Gagal mengambil data untuk kotak stats:", err)
+      }
+    }
+
+    // Ambil data pertama kali, lalu ulangi setiap 2 detik
+    fetchMetrics()
+    const interval = setInterval(fetchMetrics, 2000)
 
     return () => clearInterval(interval)
   }, [])
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-2">
       {/* KOTAK CPU */}
       <div className="rounded-xl border bg-card p-6 shadow-sm">
         <div className="text-sm font-medium text-muted-foreground">Avg CPU Usage</div>
+        <div className="mt-2 text-3xl font-bold tracking-tight text-blue-500">
+          {metrics.cpu}%
+        </div>
+        <div className="text-xs text-muted-foreground mt-1">Data asli prosesor laptop</div>
+      </div>
+
+      {/* KOTAK MEMORY / RAM */}
+      <div className="rounded-xl border bg-card p-6 shadow-sm">
+        <div className="text-sm font-medium text-muted-foreground">Memory Used (RAM)</div>
         <div className="mt-2 text-3xl font-bold tracking-tight text-emerald-500">
-          {cpuUsage}%
+          {metrics.ram}%
         </div>
-        <div className="text-xs text-muted-foreground mt-1">-5% from yesterday</div>
-      </div>
-
-      {/* KOTAK MEMORY */}
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="text-sm font-medium text-muted-foreground">Memory Used</div>
-        <div className="mt-2 text-3xl font-bold tracking-tight">
-          {memoryUsed} GB
-        </div>
-        <div className="text-xs text-muted-foreground mt-1">of 256 GB total</div>
-      </div>
-
-      {/* KOTAK NETWORK TRAFFIC */}
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="text-sm font-medium text-muted-foreground">Network Traffic</div>
-        <div className="mt-2 text-3xl font-bold tracking-tight">
-          {networkTraffic} TB
-        </div>
-        <div className="text-xs text-muted-foreground mt-1 text-emerald-500">+12% from yesterday</div>
-      </div>
-
-      {/* KOTAK TOTAL SERVERS (Statis) */}
-      <div className="rounded-xl border bg-card p-6 shadow-sm">
-        <div className="text-sm font-medium text-muted-foreground">Total Servers</div>
-        <div className="mt-2 text-3xl font-bold tracking-tight">24</div>
-        <div className="text-xs text-muted-foreground mt-1 text-emerald-500">+2 this month</div>
+        <div className="text-xs text-muted-foreground mt-1">Kapasitas RAM yang terpakai</div>
       </div>
     </div>
   )
