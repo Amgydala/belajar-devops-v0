@@ -44,3 +44,5 @@ export default function DashboardPage() {
     </div>
   )
 }
+
+// test update git pakai terminal zsh baru
