@@ -4,30 +4,34 @@ import { useState, useEffect } from "react"
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 
 export function CpuChart() {
-  // 1. State untuk menyimpan data grafik 6 jam terakhir
-  const [data, setData] = useState([
-    { time: "10:00", usage: 55 },
-    { time: "11:00", usage: 62 },
-    { time: "12:00", usage: 48 },
-    { time: "13:00", usage: 70 },
-    { time: "14:00", usage: 65 },
-    { time: "15:00", usage: 67 }, // Ini data jam terakhir yang akan bergerak
+  // State untuk menyimpan list data grafik riil
+  const [data, setData] = useState<{ time: string; usage: number }[]>([
+    { time: "Start", usage: 0 }
   ])
 
-  // 2. Timer otomatis untuk mengacak data jam terakhir setiap 3 detik
   useEffect(() => {
-    const interval = setInterval(() => {
-      setData((prevData) => {
-        // Ambil semua data kecuali data terakhir
-        const updatedData = [...prevData]
-        // Acak angka khusus untuk jam terakhir (15:00) antara 45% - 85%
-        updatedData[updatedData.length - 1] = {
-          ...updatedData[updatedData.length - 1],
-          usage: Math.floor(Math.random() * (85 - 45 + 1)) + 45
+    // Fungsi untuk mengambil data asli dari laptop via API internal
+    const fetchRealData = async () => {
+      try {
+        const response = await fetch('/api/stats')
+        const resData = await response.json()
+
+        if (resData.cpu !== undefined) {
+          setData((prevData) => {
+            // Ambil 6 data terakhir saja agar grafik tidak kepanjangan
+            const newData = [...prevData, { time: resData.time, usage: resData.cpu }]
+            if (newData.length > 7) newData.shift()
+            return newData
+          })
         }
-        return updatedData
-      })
-    }, 3000)
+      } catch (err) {
+        console.error("Gagal menyadap data laptop:", err)
+      }
+    }
+
+    // Ambil data pertama kali, lalu ulangi setiap 2 detik secara real-time
+    fetchRealData()
+    const interval = setInterval(fetchRealData, 2000)
 
     return () => clearInterval(interval)
   }, [])
@@ -35,36 +39,16 @@ export function CpuChart() {
   return (
     <div className="rounded-xl border bg-card p-6 shadow-sm">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold tracking-tight">CPU Load History</h3>
-        <p className="text-sm text-muted-foreground">Real-time hourly breakdown</p>
+        <h3 className="text-lg font-semibold tracking-tight">Live Laptop CPU Load</h3>
+        <p className="text-sm text-muted-foreground">Menggunakan data asli hardware kamu</p>
       </div>
       <div className="h-[240px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
-            <XAxis 
-              dataKey="time" 
-              stroke="#888888" 
-              fontSize={12} 
-              tickLine={false} 
-              axisLine={false} 
-            />
-            <YAxis
-              stroke="#888888"
-              fontSize={12}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(value) => `${value}%`}
-              domain={[0, 100]}
-            />
-            <Tooltip 
-              cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-              contentStyle={{ background: '#1f2937', borderColor: '#374151', color: '#fff' }}
-            />
-            <Bar 
-              dataKey="usage" 
-              fill="#10b981" 
-              radius={[4, 4, 0, 0]} 
-            />
+            <XAxis dataKey="time" stroke="#888888" fontSize={10} tickLine={false} axisLine={false} />
+            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}%`} domain={[0, 100]} />
+            <Tooltip contentStyle={{ background: '#1f2937', borderColor: '#374151', color: '#fff' }} />
+            <Bar dataKey="usage" fill="#3b82f6" radius={[4, 4, 0, 0]} /> {/* Warna biru tanda data riil */}
           </BarChart>
         </ResponsiveContainer>
       </div>
