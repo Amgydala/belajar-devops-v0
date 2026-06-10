@@ -6,17 +6,18 @@ export async function GET() {
     const cpuLoad = await si.currentLoad()
     const memory = await si.mem()
     
-    // SENSOR BARU: Ambil data statistik jaringan internet
-    const netStats = await si.networkInterfaceDefault()
-    const netData = await si.networkStats(netStats)
+    // AMBIL SEMUA DATA KARTU JARINGAN (Termasuk yang virtual)
+    const netData = await si.networkStats()
 
     const ramUsagePercentage = Math.round((memory.active / memory.total) * 100)
     const cpuUsagePercentage = Math.round(cpuLoad.currentLoad)
 
-    // Hitung kecepatan download & upload dalam MB/s (Megabytes per second)
-    // Kita bagi 1024 dua kali karena data aslinya berupa bytes
-    const rx_speed = netData[0] ? parseFloat((netData[0].rx_sec / 1024 / 1024).toFixed(2)) : 0 // Download
-    const tx_speed = netData[0] ? parseFloat((netData[0].tx_sec / 1024 / 1024).toFixed(2)) : 0 // Upload
+    // Trik DevOps: Cari kartu jaringan yang angka rx_sec (download) atau tx_sec (upload) nya diatas 0
+    const activeNet = netData.find(net => net.rx_sec > 0 || net.tx_sec > 0) || netData[0]
+
+    // Konversi bytes ke Megabytes per second (MB/s)
+    const rx_speed = activeNet ? parseFloat((activeNet.rx_sec / 1024 / 1024).toFixed(2)) : 0
+    const tx_speed = activeNet ? parseFloat((activeNet.tx_sec / 1024 / 1024).toFixed(2)) : 0
 
     return NextResponse.json({
       cpu: cpuUsagePercentage,
