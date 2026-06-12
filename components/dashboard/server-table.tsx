@@ -51,6 +51,30 @@ function UsageBar({ value, color }: { value: number; color: string }) {
 export function ServerTable() {
   const [processes, setProcesses] = useState<LinuxProcess[]>([])
 
+  // 🎯 1. FUNGSI HANDLE KILL (Ditaruh di atas useEffect)
+  const handleKill = async (pid: number) => {
+    if (confirm(`Apakah kamu yakin ingin mematikan proses dengan PID ${pid}?`)) {
+      try {
+        const res = await fetch('/api/kill-process', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pid }),
+        });
+
+        const data = await res.json();
+        if (data.success) {
+          alert(data.message);
+          // Mengosongkan proses sementara agar UI langsung terkesan merespons terhapus
+          setProcesses((prev) => prev.filter((p) => p.pid !== pid));
+        } else {
+          alert('Gagal mematikan proses: ' + data.error);
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan koneksi server');
+      }
+    }
+  };
+
   useEffect(() => {
     const fetchWSLProcesses = async () => {
       try {
@@ -103,8 +127,9 @@ export function ServerTable() {
               <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
                 Memory Usage
               </th>
-              <th className="px-5 py-3 text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                <span className="sr-only">Actions</span>
+              {/* Kepala Tabel Kolom Aksi */}
+              <th className="px-5 py-3 text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Actions
               </th>
             </tr>
           </thead>
@@ -127,7 +152,14 @@ export function ServerTable() {
                 <td className="px-5 py-4">
                   <UsageBar value={proc.mem} color="bg-accent" />
                 </td>
-                <td className="px-5 py-4 text-right">
+                {/* 🎯 2. KOLOM TOMBOL ACTIONS DENGAN TOMBOL KILL SEKALIGUS */}
+                <td className="px-5 py-4 text-center flex items-center justify-center gap-2">
+                  <button 
+                    onClick={() => handleKill(proc.pid)}
+                    className="bg-red-500/10 hover:bg-red-500 hover:text-white text-red-500 font-medium py-1 px-2.5 rounded-lg text-xs transition-all border border-red-500/20"
+                  >
+                    ❌ Kill
+                  </button>
                   <button className="rounded-lg p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground">
                     <MoreHorizontal className="h-4 w-4" />
                   </button>
